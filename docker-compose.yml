@@ -1,0 +1,15 @@
+version: "2"
+services:
+  lighthouse:
+    build: .
+    user: "node"
+    working_dir: /home/node/app
+    environment:
+      - NODE_ENV=production
+    volumes:
+      - ./app:/home/node/app
+      - ./output:/home/node/data
+    expose:
+      - "8081"
+#    command: "/bin/bash"
+    command: "node server.js -i input.json -o data"

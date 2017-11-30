@@ -1,0 +1,7 @@
+.gitignore
+app/
+docker-compose.yml
+docker_build.sh
+docker_deploy_aws.sh
+docker_run.sh
+output/
