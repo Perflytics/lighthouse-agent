@@ -11,7 +11,7 @@ const debug = require('debug')('perflytics');
 
 const perfConfig = require('lighthouse/lighthouse-core/config/perf.json');
 const DEFAULT_LIGHTHOUSE_OPTIONS = {logLevel: 'silent', output: 'json'};
-const DEFAULT_CHROME_FLAGS = ['--headless', '--disable-gpu'];
+const DEFAULT_CHROME_FLAGS = ['--headless', '--disable-gpu', '--no-sandbox'];
 log.setLevel(DEFAULT_LIGHTHOUSE_OPTIONS.logLevel);
 
 var argv = require('yargs')
