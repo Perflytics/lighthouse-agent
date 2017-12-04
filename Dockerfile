@@ -10,16 +10,9 @@ RUN echo "http://dl-2.alpinelinux.org/alpine/edge/main" > /etc/apk/repositories 
     && echo "http://dl-2.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories \
     && apk -U --no-cache \
     --allow-untrusted add \
-    zlib-dev \
     chromium \
-    xvfb \
-    wait4ports \
-    xorg-server \
-    dbus \
     ttf-freefont \
-    mesa-dri-swrast \
     grep \
-    udev \
     && apk del --purge --force linux-headers binutils-gold gnupg zlib-dev libc-utils \
     && rm -rf /var/lib/apt/lists/* \
     /var/cache/apk/* \
@@ -38,5 +31,6 @@ ENV HOME=/home/node CHROME_PATH=/usr/lib/chromium CHROME_BIN=/usr/bin/chromium-b
     NODE_ENV=production
 
 WORKDIR /home/node/app
+USER node
 
 CMD [ "npm", "start" ]
