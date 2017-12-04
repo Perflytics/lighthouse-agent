@@ -41,6 +41,18 @@ async function registerLighthouseListener(event, reportStatusLog) {
     return writeStream;
 }
 
+async function createReportDir(reportDir) {
+    mkdirp(reportDir, (err) => {
+        if (err) {
+            console.error('Cannot create directory ', reportDir);
+            console.error(err);
+        }
+        else {
+            debug('Storing files to %s', reportDir);
+        }
+    });
+}
+
 async function main() {
     debug('Inputfile provided is %s', argv.i);
     var outputDir;
@@ -53,7 +65,9 @@ async function main() {
     }
     debug('Output will be placed to %s', outputDir);
 
+    //parsing input file
     let reportOptions = JSON.parse(fs.readFileSync(argv.i, 'utf8'));
+    let reportID = reportOptions.reportID;
     let chromeFlags = [...DEFAULT_CHROME_FLAGS, ...reportOptions.config.chromeFlags]
     let lighthouseOptions = Object.assign(DEFAULT_LIGHTHOUSE_OPTIONS, reportOptions);
     delete lighthouseOptions.config.chromeFlags;
@@ -65,23 +79,16 @@ async function main() {
         lighthouseOptions.port = chrome.port;
         debug('Started chrome with debug port on %s', chrome.port);
 
+        let reportDir = outputDir+'/'+reportID;
+        await createReportDir(reportDir);
+
         for (let target of reportOptions.targets) {
-            let reportDir = outputDir+'/'+target.reportID;
-            let resultFile = reportDir+'/'+target.reportID+'.json';
-            let reportStatusLog = reportDir+'/'+target.reportID+'status.log';
-            let reportWarnLog = reportDir+'/'+target.reportID+'warn.log';
+
+            let resultFile = reportDir+'/'+target.reportPageID+'.json';
+            let reportStatusLog = reportDir+'/'+target.reportPageID+'.status.log';
+            let reportWarnLog = reportDir+'/'+target.reportPageID+'.warn.log';
 
             try {
-                mkdirp.sync(reportDir, (err) => {
-                    if (err) {
-                        console.error('Cannot create directory ', reportDir);
-                        console.error(err);
-                    }
-                    else {
-                        debug('Storing files to %s', reportDir);
-                    }
-                });
-
                 let statusStream = registerLighthouseListener('status',reportStatusLog);
                 let warnStream = registerLighthouseListener('warning',reportWarnLog);
 
@@ -96,7 +103,9 @@ async function main() {
                     else {
                         debug('The result was saved to %s', resultFile);
                     }
-                });
+                })
+
+                //@todo pridat soubor .done
 
             } catch(e) {
                 console.error(e);
