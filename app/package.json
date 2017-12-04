@@ -6,7 +6,7 @@
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js -i input.json -o queue"
+    "start": "node server.js -i input.json -o ../data/queue"
   },
   "keywords": [],
   "license": "Apache-2.0",
