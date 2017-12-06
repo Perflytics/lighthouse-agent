@@ -45,5 +45,6 @@ RUN yarn install --production
 FROM base
 WORKDIR /home/node/
 COPY --from=builder /home/node/node_modules/ ./node_modules/
+COPY --from=builder /home/node/package.json /home/node/yarn.lock ./
 ADD ./app/ /home/node/app/
 CMD [ "npm", "start" ]
