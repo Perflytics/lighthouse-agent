@@ -7,7 +7,7 @@ gulp.task('default', function() {
 
 gulp.task('clean:output', function () {
     return del([
-        'queue/**/*'
+        '../output/**/*'
     ]);
 });
 
