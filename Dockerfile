@@ -7,5 +7,6 @@ FROM klingac/lighthouse-agent
 #ADD lighthouse-script.sh /
 
 ADD ./app/ /home/node/app/
+ADD ./node_modules/ /home/node/node_modules
 
 CMD [ "npm", "start" ]

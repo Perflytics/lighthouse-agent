@@ -1,4 +1,4 @@
-app/node_modules/
+node_modules/
 .idea
-app/input.json
+input.json
 output/
