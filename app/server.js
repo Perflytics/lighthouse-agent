@@ -43,7 +43,7 @@ const logger = new (winston.Logger)({
             level: 'info'
         }),
         new (winston.transports.File)({
-            filename: `${logDir}/results.log`,
+            filename: `${logDir}/agent.log`,
             timestamp: tsFormat,
             level: env === 'development' ? 'debug' : 'info'
         })
