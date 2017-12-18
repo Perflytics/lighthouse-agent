@@ -10,7 +10,7 @@ const mkdirp = require('mkdirp');
 const debug = require('debug')('perflytics');
 const argparse = require('yargs-parser');
 const winston = require('winston');
-const logDirName = 'log';
+
 const env = process.env.NODE_ENV !== 'production';
 
 //initialization,config
@@ -31,7 +31,7 @@ var argv = require('yargs')
 
 //setup logging
 const outputDir = argv.o;
-const logDir = outputDir+'/'+logDirName;
+const logDir = outputDir;
 const tsFormat = () => (new Date()).toLocaleTimeString();
 mkdirp(logDir);    //create logdir
 const logger = new (winston.Logger)({
