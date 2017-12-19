@@ -6,7 +6,6 @@ const lighthouse = require('lighthouse');
 const log = require('lighthouse-logger');
 const chromeLauncher = require('chrome-launcher');
 const fs = require('fs');
-const mkdirp = require('mkdirp');
 const debug = require('debug')('perflytics');
 const argparse = require('yargs-parser');
 const winston = require('winston');
@@ -67,16 +66,6 @@ async function registerLighthouseListener(event, reportStatusLog) {
     return writeStream;
 }
 
-async function createReportDir(reportDir) {
-    logger.info('Storing files to %s', reportDir);
-    mkdirp.sync(reportDir, (err) => {
-        if (err) {
-            logger.error('Cannot create directory ', reportDir);
-            logger.error(err);
-        }
-    });
-}
-
 function writeResultsToFile(resultFile, results) {
     fs.writeFileSync(resultFile, results, (err) => {
         if(err) {
@@ -94,7 +83,7 @@ async function createLockFile(dirname) {
 
 function deleteLockFile(dirname) {
     fs.unlinkSync(dirname+'/.lock');
-    logger.info('deleting lockfile');
+    logger.info('Deleting lockfile');
 }
 
 async function processTargets(reportOptions, reportDir, lighthouseOptions) {
@@ -133,17 +122,15 @@ async function main() {
         lighthouseOptions.port = chrome.port;
         logger.info('Started chrome with debug port on %s', chrome.port);
 
-        let reportDir = outputDir+'/'+reportID;
+        await createLockFile(outputDir);
 
-        createReportDir(reportDir).then(() => {
-            return createLockFile(reportDir)
-        });
-
-        await processTargets(reportOptions, reportDir, lighthouseOptions);
+        await processTargets(reportOptions, outputDir, lighthouseOptions);
 
         chrome.kill();
 
-        deleteLockFile(reportDir);
+        //@todo lockfile pro kazdou stranku extra
+        // globalni lockfile ponechat taky
+        deleteLockFile(outputDir);
 
     } catch(e) {
         logger.error(e);
