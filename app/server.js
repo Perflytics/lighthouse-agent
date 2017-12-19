@@ -76,14 +76,14 @@ function writeResultsToFile(resultFile, results) {
     logger.info('The result was saved to %s', resultFile);
 }
 
-async function createLockFile(dirname) {
-    var fd = fs.openSync(dirname+'/.lock', 'a');
+async function createLockFile(fileName) {
+    var fd = fs.openSync(fileName, 'a');
     return fd;
 }
 
-function deleteLockFile(dirname) {
-    fs.unlinkSync(dirname+'/.lock');
-    logger.info('Deleting lockfile');
+function deleteLockFile(fileName) {
+    fs.unlinkSync(fileName);
+    logger.info(`Deleting lockfile ${fileName}`);
 }
 
 async function processTargets(reportOptions, reportDir, lighthouseOptions) {
@@ -93,12 +93,15 @@ async function processTargets(reportOptions, reportDir, lighthouseOptions) {
         let reportWarnLog = reportDir + '/' + target.reportPageID + '.warn';
 
         try {
+            await createLockFile(`${outputDir}/${target.reportPageID}.lock`);
+            logger.info(`Processing URL ${target.url}`);
             let statusStream = registerLighthouseListener('status', reportStatusLog);
             let warnStream = registerLighthouseListener('warning', reportWarnLog);
 
             let results = await lighthouse(target.url, lighthouseOptions);
 
             writeResultsToFile(resultFile, JSON.stringify(results));
+            deleteLockFile(`${outputDir}/${target.reportPageID}.lock`);
         } catch (e) {
             logger.error(e);
         }
@@ -113,7 +116,6 @@ async function main() {
 
     //parsing input file
     let reportOptions = JSON.parse(fs.readFileSync(argv.i, 'utf8'));
-    let reportID = reportOptions.reportID;
     var chromeFlags = [...DEFAULT_CHROME_FLAGS, ...reportOptions.config.chromeFlags];
     var lighthouseOptions = Object.assign(DEFAULT_LIGHTHOUSE_OPTIONS, argparse(reportOptions.config.options.join(' ')));
 
@@ -122,15 +124,13 @@ async function main() {
         lighthouseOptions.port = chrome.port;
         logger.info('Started chrome with debug port on %s', chrome.port);
 
-        await createLockFile(outputDir);
+        await createLockFile(`${outputDir}/.lock`);
 
         await processTargets(reportOptions, outputDir, lighthouseOptions);
 
         chrome.kill();
 
-        //@todo lockfile pro kazdou stranku extra
-        // globalni lockfile ponechat taky
-        deleteLockFile(outputDir);
+        deleteLockFile(`${outputDir}/.lock`);
 
     } catch(e) {
         logger.error(e);
