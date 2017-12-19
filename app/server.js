@@ -33,7 +33,6 @@ var argv = require('yargs')
 const outputDir = argv.o;
 const logDir = outputDir;
 const tsFormat = () => (new Date()).toLocaleTimeString();
-mkdirp(logDir);    //create logdir
 const logger = new (winston.Logger)({
     transports: [
         // colorize the output to the console
