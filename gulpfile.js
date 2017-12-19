@@ -7,8 +7,15 @@ gulp.task('default', function() {
 
 gulp.task('clean:output', function () {
     return del([
-        '../output/**/*'
+        'output/**/*'
     ]);
 });
 
-gulp.task('default', ['clean:output']);
+gulp.task('clean:data', function () {
+    return del([
+        'data/**/*'
+    ]);
+});
+
+
+gulp.task('default', ['clean:data']);
