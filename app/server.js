@@ -88,20 +88,22 @@ function deleteLockFile(fileName) {
 
 async function processTargets(reportOptions, reportDir, lighthouseOptions) {
     for (let target of reportOptions.targets) {
-        let resultFile = reportDir + '/' + target.reportPageID + '.json';
-        let reportStatusLog = reportDir + '/' + target.reportPageID + '.status';
-        let reportWarnLog = reportDir + '/' + target.reportPageID + '.warn';
+        let reportPageID = target.id;
+        let reportPageURL = target.url;
+        let resultFile = `${reportDir}/${reportPageID}.json`;
+        let reportStatusLog = `${reportDir}/${reportPageID}.status`;
+        let reportWarnLog = `${reportDir}/${reportPageID}.warn`;
 
         try {
-            await createLockFile(`${outputDir}/${target.reportPageID}.lock`);
-            logger.info(`Processing URL ${target.url}`);
+            await createLockFile(`${outputDir}/${reportPageID}.lock`);
+            logger.info(`Processing URL ${reportPageURL}`);
             let statusStream = registerLighthouseListener('status', reportStatusLog);
             let warnStream = registerLighthouseListener('warning', reportWarnLog);
 
-            let results = await lighthouse(target.url, lighthouseOptions);
+            let results = await lighthouse(reportPageURL, lighthouseOptions);
 
             writeResultsToFile(resultFile, JSON.stringify(results));
-            deleteLockFile(`${outputDir}/${target.reportPageID}.lock`);
+            deleteLockFile(`${outputDir}/${reportPageID}.lock`);
         } catch (e) {
             logger.error(e);
         }
