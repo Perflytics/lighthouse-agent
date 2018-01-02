@@ -9,12 +9,31 @@ const fs = require('fs');
 const debug = require('debug')('perflytics');
 const argparse = require('yargs-parser');
 const winston = require('winston');
+const stringify = require('json-stringify-safe');
 
 const env = process.env.NODE_ENV !== 'production';
 
 //initialization,config
 const perfConfig = require('lighthouse/lighthouse-core/config/perf.json');
-const DEFAULT_LIGHTHOUSE_OPTIONS = {logLevel: 'silent', output: 'json'};
+const DEFAULT_LIGHTHOUSE_OPTIONS = {
+    logLevel: 'silent',
+    output: 'json',
+    disableStorageReset: false,
+    disableDeviceEmulation: true,
+    disableCpuThrottling: false,
+    disableNetworkThrottling: true,
+    saveAssets: false,
+    saveArtifacts: false,
+    listAllAudits: false,
+    listTraceCategories: false,
+    perf: true,
+    view: false,
+    verbose: false,
+    quiet: false,
+    hostname: 'localhost',
+    maxWaitForLoad: 45000,
+    enableErrorReporting: false
+};
 const DEFAULT_CHROME_FLAGS = ['--headless', '--disable-gpu', '--no-sandbox'];
 log.setLevel(DEFAULT_LIGHTHOUSE_OPTIONS.logLevel);
 
@@ -101,8 +120,10 @@ async function processTargets(reportOptions, reportDir, lighthouseOptions) {
             let warnStream = registerLighthouseListener('warning', reportWarnLog);
 
             let results = await lighthouse(reportPageURL, lighthouseOptions);
+            delete results.artifacts;
+            delete results.audits;
 
-            writeResultsToFile(resultFile, JSON.stringify(results));
+            writeResultsToFile(resultFile, stringify(results, null, 4));
             deleteLockFile(`${outputDir}/${reportPageID}.lock`);
         } catch (e) {
             logger.error(e);
