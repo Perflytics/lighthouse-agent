@@ -121,7 +121,7 @@ async function processTargets(reportOptions, reportDir, lighthouseOptions) {
 
             let results = await lighthouse(reportPageURL, lighthouseOptions);
             delete results.artifacts;
-            delete results.audits;
+            // delete results.audits;
 
             writeResultsToFile(resultFile, stringify(results, null, 4));
             deleteLockFile(`${outputDir}/${reportPageID}.lock`);
