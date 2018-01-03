@@ -1,4 +1,4 @@
-FROM node:9.2-alpine as base
+FROM node:alpine as base
 
 LABEL maintainer "Martin Krutak <devklingac@gmail.com>"
 
