@@ -10,6 +10,28 @@ const debug = require('debug')('perflytics');
 const argparse = require('yargs-parser');
 const winston = require('winston');
 const stringify = require('json-stringify-safe');
+const path = require('path');
+var argv = require('yargs')
+    .usage('Run lighthouse configured by JSON file')
+    .example('$0', 'Run lighthouse script')
+    .alias('o', 'output-dir').describe('o', 'Output directory')
+    .default('o', arg => arg ? arg : __dirname)
+    .alias('v', 'verbose').describe('v', 'Verbose output')
+    .alias('i', 'input')
+        .describe('i', 'Input file with tests definitions')
+        .coerce('i', function (arg) {
+            return JSON.parse(fs.readFileSync(arg, 'utf8'));
+        })
+    .alias('q', 'queue')
+        .describe('q', 'Queue name')
+        .implies('q', 'w')
+        .conflicts('q','i')
+    .alias('w', 'work-queue')
+        .describe('w', 'AMQP URI from which will tasks be provided. See examples here: https://www.rabbitmq.com/uri-spec.html')
+        .conflicts('w','i')
+        .implies('w', 'q')
+    .help('h').alias('h', 'help')
+    .argv;
 
 const env = process.env.NODE_ENV !== 'production';
 
@@ -37,15 +59,6 @@ const DEFAULT_LIGHTHOUSE_OPTIONS = {
 const DEFAULT_CHROME_FLAGS = ['--headless', '--disable-gpu', '--no-sandbox'];
 log.setLevel(DEFAULT_LIGHTHOUSE_OPTIONS.logLevel);
 
-var argv = require('yargs')
-    .usage('Run lighthouse configured by JSON file')
-    .example('$0', 'Run lighthouse script')
-    .alias('o', 'output-dir').describe('o', 'Output directory')
-    .default('o', arg => arg ? arg : __dirname)
-    .alias('v', 'verbose').describe('v', 'Verbose output')
-    .required('i', 'Input file must be provided').alias('i', 'input file').describe('i', 'Input file with tests definitions')
-    .help('h').alias('h', 'help')
-    .argv;
 
 //setup logging
 const outputDir = argv.o;
@@ -138,7 +151,7 @@ async function main() {
     logger.debug('Output will be placed to %s', outputDir);
 
     //parsing input file
-    let reportOptions = JSON.parse(fs.readFileSync(argv.i, 'utf8'));
+    let reportOptions = argv.i;
     var chromeFlags = [...DEFAULT_CHROME_FLAGS, ...reportOptions.config.chromeFlags];
     var lighthouseOptions = Object.assign(DEFAULT_LIGHTHOUSE_OPTIONS, argparse(reportOptions.config.options.join(' ')));
 
