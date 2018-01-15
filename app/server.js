@@ -30,6 +30,13 @@ var argv = require('yargs')
         .describe('w', 'AMQP URI from which will tasks be provided. See examples here: https://www.rabbitmq.com/uri-spec.html')
         .conflicts('w','i')
         .implies('w', 'q')
+    .check(function (argv) {
+        if(argv.i && argv.w) {
+            throw(new Error('Argument check failed: You cannot setup both input file and MQ'));
+        } else {
+            return true;
+        }
+    })
     .help('h').alias('h', 'help')
     .argv;
 
