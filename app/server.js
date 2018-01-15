@@ -146,7 +146,7 @@ async function processTargets(reportOptions, reportDir, lighthouseOptions) {
 
 
 async function main() {
-    logger.debug('Inputfile provided is %s', argv.i);
+    logger.debug('Input file provided is %s', argv.i);
 
     logger.debug('Output will be placed to %s', outputDir);
 
