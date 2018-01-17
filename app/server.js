@@ -11,6 +11,7 @@ const argparse = require('yargs-parser');
 const winston = require('winston');
 const stringify = require('json-stringify-safe');
 const path = require('path');
+const amqp = require('amqplib');
 var argv = require('yargs')
     .usage('Run lighthouse configured by JSON file')
     .example('$0', 'Run lighthouse script')
@@ -125,6 +126,78 @@ function deleteLockFile(fileName) {
     logger.info(`Deleting lockfile ${fileName}`);
 }
 
+async function getReportOptions() {
+    let result;
+
+    if (argv.i) {
+        result = argv.i;
+    }
+
+    if (argv.w) {
+        try {
+            result = JSON.parse(await getReportOptionsFromMQ());
+        } catch(e) {
+            logger.error(e);
+        }
+    }
+
+    return result;
+}
+
+function getReportOptionsFromMQ() {
+    return amqp.connect(argv.w)
+    .then(function(conn) {
+        return conn.createChannel();
+    })
+    .then(function(channel) {
+        channel.prefetch(1);
+        channel.assertQueue(argv.q);
+        return new Promise(function (resolve, reject) {
+            channel.consume(argv.q, function(message) {
+                console.log('message: ', message);
+                if (message !== null) {
+                    let repOptions = message.content.toString();
+                    channel.ack(message);
+                    resolve(repOptions);
+                } else {
+                    reject(new Error('No messages in queue'));
+                }
+            });
+        })
+
+    })
+    .catch(logger.warn);
+
+    // return reportOptions;
+
+    // try {
+    //     let conn = await amqp.connect(argv.w);
+    //     let channel = await conn.createChannel();
+    //     let queue = await channel.assertQueue(argv.q);
+    //     channel.consume(argv.q, function(msg) {
+    //                                 if (msg !== null) {
+    //                                     console.log('mqg',msg.content.toString());
+    //                                     channel.ack(msg);
+    //                                     return msg;
+    //                                 }
+    //                             }
+    //     ).then((zprava) => {
+    //         console.log('zprava:', zprava);
+    //         let spr = Promise.resolve(zprava);
+    //         return spr;
+    //     }).catch(console.warn);
+        // if (message !== null) {
+        // reportOptions = message;
+        //     logger.info(message.content.toString());
+        //     channel.ack(message);
+        // }
+    // } catch(e) {
+    //     logger.error(e);
+    // }
+
+    // return message;
+}
+
 async function processTargets(reportOptions, reportDir, lighthouseOptions) {
     for (let target of reportOptions.targets) {
         let reportPageID = target.id;
@@ -157,12 +230,16 @@ async function main() {
 
     logger.debug('Output will be placed to %s', outputDir);
 
-    //parsing input file
-    let reportOptions = argv.i;
-    var chromeFlags = [...DEFAULT_CHROME_FLAGS, ...reportOptions.config.chromeFlags];
-    var lighthouseOptions = Object.assign(DEFAULT_LIGHTHOUSE_OPTIONS, argparse(reportOptions.config.options.join(' ')));
 
     try {
+        //parsing input file
+        let reportOptions = await getReportOptions();
+
+        logger.info('Using options:', reportOptions);
+
+        let chromeFlags = [...DEFAULT_CHROME_FLAGS, ...reportOptions.config.chromeFlags];
+        let lighthouseOptions = Object.assign(DEFAULT_LIGHTHOUSE_OPTIONS, argparse(reportOptions.config.options.join(' ')));
+
         let chrome = await launchChrome({chromeFlags: chromeFlags});
         lighthouseOptions.port = chrome.port;
         logger.info('Started chrome with debug port on %s', chrome.port);
@@ -183,7 +260,9 @@ async function main() {
 module.exports = main;
 if(require.main == module) {
     logger.info('Starting app');
-    main().then(() => {
+    main()
+    .then(() => {
         logger.info('Done');
-    });
+    })
+    .catch(logger.warn);
 }
