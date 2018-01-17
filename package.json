@@ -11,10 +11,12 @@
   "keywords": [],
   "license": "Apache-2.0",
   "dependencies": {
+    "amqplib": "^0.5.2",
     "debug": "^3.1.0",
     "lighthouse": "^2.8.0",
     "mkdirp": "^0.5.1",
     "winston": "^2.4.0",
+    "yargs": "^10.1.1",
     "yargs-parser": "^8.0.0"
   },
   "devDependencies": {
