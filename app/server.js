@@ -167,35 +167,6 @@ function getReportOptionsFromMQ() {
 
     })
     .catch(logger.warn);
-
-    // return reportOptions;
-
-    // try {
-    //     let conn = await amqp.connect(argv.w);
-    //     let channel = await conn.createChannel();
-    //     let queue = await channel.assertQueue(argv.q);
-    //     channel.consume(argv.q, function(msg) {
-    //                                 if (msg !== null) {
-    //                                     console.log('mqg',msg.content.toString());
-    //                                     channel.ack(msg);
-    //                                     return msg;
-    //                                 }
-    //                             }
-    //     ).then((zprava) => {
-    //         console.log('zprava:', zprava);
-    //         let spr = Promise.resolve(zprava);
-    //         return spr;
-    //     }).catch(console.warn);
-        // if (message !== null) {
-        // reportOptions = message;
-        //     logger.info(message.content.toString());
-        //     channel.ack(message);
-        // }
-    // } catch(e) {
-    //     logger.error(e);
-    // }
-
-    // return message;
 }
 
 async function processTargets(reportOptions, reportDir, lighthouseOptions) {
