@@ -130,10 +130,12 @@ async function getReportOptions() {
     let result;
 
     if (argv.i) {
+        logger.info(`Using options from input file`)
         result = argv.i;
     }
 
     if (argv.w) {
+        logger.info(`Using options from WorkQueue ${argv.q} in ${argv.w}`);
         try {
             result = JSON.parse(await getReportOptionsFromMQ());
         } catch(e) {
@@ -145,8 +147,10 @@ async function getReportOptions() {
 }
 
 function getReportOptionsFromMQ() {
+    logger.info(`Connecting to AMQP server ${argv.w}`);
     return amqp.connect(argv.w)
     .then(function(conn) {
+        logger.info('Connection to AMQP success. Creating channel');
         return conn.createChannel();
     })
     .then(function(channel) {
@@ -157,6 +161,7 @@ function getReportOptionsFromMQ() {
                 console.log('message: ', message);
                 if (message !== null) {
                     let repOptions = message.content.toString();
+                    logger.info(`Fetched options ${repOptions}`);
                     channel.ack(message);
                     resolve(repOptions);
                 } else {
