@@ -30,20 +30,17 @@ ENV HOME=/home/node CHROME_PATH=/usr/lib/chromium CHROME_BIN=/usr/bin/chromium-b
     CHROME_FLAGS="--headless --no-sandbox --disable-gpu" LIGHTHOUSE_FLAGS="--perf --disable-device-emulation --no-enable-error-reporting" \
     NODE_ENV=production
 
-WORKDIR /home/node/app
+WORKDIR /home/node
 USER node
-
-CMD [ "npm", "start" ]
-
 
 FROM base as builder
 
-WORKDIR /home/node/
+USER node
 COPY package.json yarn.lock ./
 RUN yarn install --production
 
 FROM base
-WORKDIR /home/node/
+WORKDIR /home/node
 COPY --from=builder /home/node/node_modules/ ./node_modules/
 COPY --from=builder /home/node/package.json /home/node/yarn.lock ./
 ADD ./app/ /home/node/app/
