@@ -231,7 +231,16 @@ async function main() {
         logger.info('Using options:', reportOptions);
 
         let chromeFlags = [...DEFAULT_CHROME_FLAGS, ...reportOptions.config.chromeFlags];
-        let lighthouseOptions = Object.assign(DEFAULT_LIGHTHOUSE_OPTIONS, argparse(reportOptions.config.options.join(' ')));
+
+        let lighthouseOptions = Object.assign(DEFAULT_LIGHTHOUSE_OPTIONS,
+            argparse(reportOptions.config.options.join(' '),
+                {
+                    configuration: {
+                        'camel-case-expansion': true
+                    }
+                }
+            )
+        );
 
         let chrome = await launchChrome({chromeFlags: chromeFlags});
         lighthouseOptions.port = chrome.port;
