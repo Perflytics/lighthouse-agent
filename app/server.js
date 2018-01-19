@@ -127,51 +127,68 @@ function deleteLockFile(fileName) {
 }
 
 async function getReportOptions() {
-    let result;
+    let options;
 
     if (argv.i) {
         logger.info(`Using options from input file`)
-        result = argv.i;
+        options = argv.i;
     }
 
     if (argv.w) {
-        logger.info(`Using options from WorkQueue ${argv.q} in ${argv.w}`);
+        logger.info(`Getting options from WorkQueue ${argv.q} in ${argv.w}`);
         try {
-            result = JSON.parse(await getReportOptionsFromMQ());
+            options = await getReportOptionsFromMQ()
+                .then((response) => {
+                    return JSON.parse(response);
+                })
+                .catch(logger.error);
+            if (options === null) {
+                process.exit(0);
+            }
         } catch(e) {
             logger.error(e);
         }
     }
 
-    return result;
+    return options;
 }
 
-function getReportOptionsFromMQ() {
+async function getReportOptionsFromMQ() {
     logger.info(`Connecting to AMQP server ${argv.w}`);
-    return amqp.connect(argv.w)
+    let repOptions = amqp.connect(argv.w)
     .then(function(conn) {
-        logger.info('Connection to AMQP success. Creating channel');
+        logger.info('Connection to AMQP success');
         return conn.createChannel();
     })
     .then(function(channel) {
-        channel.prefetch(1);
-        channel.assertQueue(argv.q);
-        return new Promise(function (resolve, reject) {
-            channel.consume(argv.q, function(message) {
-                console.log('message: ', message);
-                if (message !== null) {
-                    let repOptions = message.content.toString();
-                    logger.info(`Fetched options ${repOptions}`);
-                    channel.ack(message);
-                    resolve(repOptions);
-                } else {
-                    reject(new Error('No messages in queue'));
-                }
-            });
-        })
-
+        logger.info('Channel created');
+        return channel.assertQueue(argv.q, {durable: true})
+            .then(function() {
+                        logger.info(`Using queue ${argv.q}`);
+                        // channel.prefetch(1);
+                        return channel;
+                    })
+            .catch(logger.error);
     })
-    .catch(logger.warn);
+    .then(function(channel) {
+        logger.info('Trying to get message');
+        return channel.get(argv.q, {noAck: true});
+    })
+    .then(task => {
+        if (!task) {
+            logger.info('No messages in queue');
+            return null;
+            // throw new Error('No messages in queue');
+        }
+        else {
+            let message = task.content.toString();
+            logger.info(`We get 1 message. Messages left ${task.fields.messageCount}`);
+            return message;
+        }
+    })
+    .catch(logger.error);
+
+    return repOptions;
 }
 
 async function processTargets(reportOptions, reportDir, lighthouseOptions) {
@@ -239,6 +256,7 @@ if(require.main == module) {
     main()
     .then(() => {
         logger.info('Done');
+        process.exit(0);
     })
     .catch(logger.warn);
 }
