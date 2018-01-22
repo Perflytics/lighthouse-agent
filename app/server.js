@@ -228,7 +228,7 @@ async function main() {
         //parsing input file
         let reportOptions = await getReportOptions();
 
-        logger.info('Using options:', reportOptions);
+        logger.info('Using options report options: %j', reportOptions);
 
         let chromeFlags = [...DEFAULT_CHROME_FLAGS, ...reportOptions.config.chromeFlags];
 
@@ -242,12 +242,15 @@ async function main() {
             )
         );
 
+        logger.info('Starting chrome with flags: %j', chromeFlags);
+
         let chrome = await launchChrome({chromeFlags: chromeFlags});
         lighthouseOptions.port = chrome.port;
         logger.info('Started chrome with debug port on %s', chrome.port);
 
         await createLockFile(`${outputDir}/.lock`);
 
+        logger.info('Processing targets with lighthouse options: %j', lighthouseOptions);
         await processTargets(reportOptions, outputDir, lighthouseOptions);
 
         chrome.kill();
