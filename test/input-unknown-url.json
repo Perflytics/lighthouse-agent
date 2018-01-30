@@ -1,0 +1,11 @@
+{
+"id" : "unknown-url",
+"config" : {
+  "options" : [ ],
+  "chromeFlags" : [ "--headless" ]
+},
+"targets" : [ {
+  "url" : "https://www.smartmeter123.io/",
+  "id" : "smio123"
+  } ]
+}

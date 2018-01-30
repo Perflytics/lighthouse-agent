@@ -1,0 +1,11 @@
+{
+"id" : "mobile",
+"config" : {
+  "options" : [ ],
+  "chromeFlags" : [ "--headless" ]
+},
+"targets" : [ {
+  "url" : "https://www.smartmeter.io/",
+  "id" : "smio"
+  } ]
+}

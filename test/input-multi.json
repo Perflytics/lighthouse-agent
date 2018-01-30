@@ -1,0 +1,14 @@
+{
+  "id" : "multi",
+  "config" : {
+    "options" : [ ],
+    "chromeFlags" : [ "--headless" ]
+  },
+  "targets" : [ {
+    "url" : "https://www.smartmeter.io/",
+    "id" : "smio"
+  }, {
+    "url" : "https://www.octoperf.com",
+    "id" : "octoperf"
+  } ]
+}

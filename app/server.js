@@ -6,33 +6,33 @@ const lighthouse = require('lighthouse');
 const log = require('lighthouse-logger');
 const chromeLauncher = require('chrome-launcher');
 const fs = require('fs');
-const debug = require('debug')('perflytics');
+const debug = require('debug')('perflytics'); // TODO not used?
 const argparse = require('yargs-parser');
 const winston = require('winston');
 const stringify = require('json-stringify-safe');
-const path = require('path');
+const path = require('path'); // TODO not used?
 const amqp = require('amqplib');
-var argv = require('yargs')
+const argv = require('yargs')
     .usage('Run lighthouse configured by JSON file')
     .example('$0', 'Run lighthouse script')
     .alias('o', 'output-dir').describe('o', 'Output directory')
     .default('o', arg => arg ? arg : __dirname)
     .alias('v', 'verbose').describe('v', 'Verbose output')
     .alias('i', 'input')
-        .describe('i', 'Input file with tests definitions')
-        .coerce('i', function (arg) {
-            return JSON.parse(fs.readFileSync(arg, 'utf8'));
-        })
+    .describe('i', 'Input file with tests definitions')
+    .coerce('i', function (arg) {
+        return JSON.parse(fs.readFileSync(arg, 'utf8'));
+    })
     .alias('q', 'queue')
-        .describe('q', 'Queue name')
-        .implies('q', 'w')
-        .conflicts('q','i')
+    .describe('q', 'Queue name')
+    .implies('q', 'w')
+    .conflicts('q', 'i')
     .alias('w', 'work-queue')
-        .describe('w', 'AMQP URI from which will tasks be provided. See examples here: https://www.rabbitmq.com/uri-spec.html')
-        .conflicts('w','i')
-        .implies('w', 'q')
+    .describe('w', 'AMQP URI from which will tasks be provided. See examples here: https://www.rabbitmq.com/uri-spec.html')
+    .conflicts('w', 'i')
+    .implies('w', 'q')
     .check(function (argv) {
-        if(argv.i && argv.w) {
+        if (argv.i && argv.w) {
             throw(new Error('Argument check failed: You cannot setup both input file and MQ'));
         } else {
             return true;
@@ -41,57 +41,46 @@ var argv = require('yargs')
     .help('h').alias('h', 'help')
     .argv;
 
-const env = process.env.NODE_ENV !== 'production';
-
-//initialization,config
-const perfConfig = require('lighthouse/lighthouse-core/config/perf.json');
-const DEFAULT_LIGHTHOUSE_OPTIONS = {
-    logLevel: 'silent',
-    output: 'json',
-    disableStorageReset: false,
-    disableDeviceEmulation: true,
-    disableCpuThrottling: false,
-    disableNetworkThrottling: true,
-    saveAssets: false,
-    saveArtifacts: false,
-    listAllAudits: false,
-    listTraceCategories: false,
-    perf: true,
-    view: false,
-    verbose: false,
-    quiet: false,
-    hostname: 'localhost',
-    maxWaitForLoad: 45000,
-    enableErrorReporting: false
-};
-const DEFAULT_CHROME_FLAGS = ['--headless', '--disable-gpu', '--no-sandbox'];
-log.setLevel(DEFAULT_LIGHTHOUSE_OPTIONS.logLevel);
-
-
-//setup logging
 const outputDir = argv.o;
-const logDir = outputDir;
+
 const tsFormat = () => (new Date()).toLocaleTimeString();
-const logger = new (winston.Logger)({
+const logger = new winston.Logger({
+    level: 'info',
     transports: [
-        // colorize the output to the console
         new (winston.transports.Console)({
-            timestamp: tsFormat,
             colorize: true,
-            level: 'info'
+            timestamp: tsFormat,
         }),
         new (winston.transports.File)({
-            filename: `${logDir}/agent.log`,
+            filename: `${outputDir}/agent.log`,
+            json: false,
             timestamp: tsFormat,
-            level: env === 'development' ? 'debug' : 'info'
         })
     ]
 });
 
-async function launchChrome(flags = {}){
+const defaultLighthouseOptions = {
+    logLevel: 'info',
+    disableStorageReset: false,
+    disableDeviceEmulation: false,
+    disableCpuThrottling: false,
+    disableNetworkThrottling: false,
+    saveAssets: false,
+    saveArtifacts: false,
+    maxWaitForLoad: 45000,
+    enableErrorReporting: false
+};
+
+const defaultChromeFlags = ['--headless', '--disable-gpu', '--no-sandbox'];
+
+log.setLevel(defaultLighthouseOptions.logLevel); // exported by lighthouse-logger module
+
+
+async function launchChrome(flags = {}) {
     return chromeLauncher.launch({chromeFlags: flags.chromeFlags});
 }
 
+/* logs Lighthouse internal events */
 async function registerLighthouseListener(event, reportStatusLog) {
     let writeStream = await fs.createWriteStream(reportStatusLog);
     writeStream.on('open', (fd) => {
@@ -108,8 +97,8 @@ async function registerLighthouseListener(event, reportStatusLog) {
 
 function writeResultsToFile(resultFile, results) {
     fs.writeFileSync(resultFile, results, (err) => {
-        if(err) {
-            logger.error('Cannot write report to dile ', resultFile);
+        if (err) {
+            logger.error('Cannot write report to file ', resultFile);
             logger.error(err);
         }
     });
@@ -117,8 +106,7 @@ function writeResultsToFile(resultFile, results) {
 }
 
 async function createLockFile(fileName) {
-    var fd = fs.openSync(fileName, 'a');
-    return fd;
+    return fs.openSync(fileName, 'a');
 }
 
 function deleteLockFile(fileName) {
@@ -130,7 +118,7 @@ async function getReportOptions() {
     let options;
 
     if (argv.i) {
-        logger.info(`Using options from input file`)
+        logger.info(`Using options from input file`);
         options = argv.i;
     }
 
@@ -145,7 +133,7 @@ async function getReportOptions() {
             if (options === null) {
                 process.exit(0);
             }
-        } catch(e) {
+        } catch (e) {
             logger.error(e);
         }
     }
@@ -156,37 +144,37 @@ async function getReportOptions() {
 async function getReportOptionsFromMQ() {
     logger.info(`Connecting to AMQP server ${argv.w}`);
     let repOptions = amqp.connect(argv.w)
-    .then(function(conn) {
-        logger.info('Connection to AMQP success');
-        return conn.createChannel();
-    })
-    .then(function(channel) {
-        logger.info('Channel created');
-        return channel.assertQueue(argv.q, {durable: true})
-            .then(function() {
-                        logger.info(`Using queue ${argv.q}`);
-                        // channel.prefetch(1);
-                        return channel;
-                    })
-            .catch(logger.error);
-    })
-    .then(function(channel) {
-        logger.info('Trying to get message');
-        return channel.get(argv.q, {noAck: true});
-    })
-    .then(task => {
-        if (!task) {
-            logger.info('No messages in queue');
-            return null;
-            // throw new Error('No messages in queue');
-        }
-        else {
-            let message = task.content.toString();
-            logger.info(`We get 1 message. Messages left ${task.fields.messageCount}`);
-            return message;
-        }
-    })
-    .catch(logger.error);
+        .then(function (conn) {
+            logger.info('Connection to AMQP success');
+            return conn.createChannel();
+        })
+        .then(function (channel) {
+            logger.info('Channel created');
+            return channel.assertQueue(argv.q, {durable: true})
+                .then(function () {
+                    logger.info(`Using queue ${argv.q}`);
+                    // channel.prefetch(1);
+                    return channel;
+                })
+                .catch(logger.error);
+        })
+        .then(function (channel) {
+            logger.info('Trying to get message');
+            return channel.get(argv.q, {noAck: true});
+        })
+        .then(task => {
+            if (!task) {
+                logger.info('No messages in queue');
+                return null;
+                // throw new Error('No messages in queue');
+            }
+            else {
+                let message = task.content.toString();
+                logger.info(`We get 1 message. Messages left ${task.fields.messageCount}`);
+                return message;
+            }
+        })
+        .catch(logger.error);
 
     return repOptions;
 }
@@ -199,20 +187,30 @@ async function processTargets(reportOptions, reportDir, lighthouseOptions) {
         let reportStatusLog = `${reportDir}/${reportPageID}.status`;
         let reportWarnLog = `${reportDir}/${reportPageID}.warn`;
 
+        logger.info(`Processing URL ${reportPageURL}`);
+
         try {
             await createLockFile(`${outputDir}/${reportPageID}.lock`);
-            logger.info(`Processing URL ${reportPageURL}`);
-            let statusStream = registerLighthouseListener('status', reportStatusLog);
-            let warnStream = registerLighthouseListener('warning', reportWarnLog);
+
+            registerLighthouseListener('status', reportStatusLog);
+            registerLighthouseListener('warning', reportWarnLog);
 
             let results = await lighthouse(reportPageURL, lighthouseOptions);
             delete results.artifacts;
             // delete results.audits;
 
             writeResultsToFile(resultFile, stringify(results, null, 4));
-            deleteLockFile(`${outputDir}/${reportPageID}.lock`);
+
         } catch (e) {
-            logger.error(e);
+            logger.error("Failed to process target %s", reportPageURL, e);
+
+            fs.writeFile(`${reportDir}/${reportPageID}.exception`, e, function (err) {
+                if (err) {
+                    logger.error("Failed to write exception file", err);
+                }
+            });
+        } finally {
+            deleteLockFile(`${outputDir}/${reportPageID}.lock`);
         }
     }
 }
@@ -230,9 +228,9 @@ async function main() {
 
         logger.info('Using options report options: %j', reportOptions);
 
-        let chromeFlags = [...DEFAULT_CHROME_FLAGS, ...reportOptions.config.chromeFlags];
+        let chromeFlags = [...defaultChromeFlags, ...reportOptions.config.chromeFlags];
 
-        let lighthouseOptions = Object.assign(DEFAULT_LIGHTHOUSE_OPTIONS,
+        let lighthouseOptions = Object.assign(defaultLighthouseOptions, // TODO zmenit options v input.json na mapu properties a vyhodit tohle parsovani?
             argparse(reportOptions.config.options.join(' '),
                 {
                     configuration: {
@@ -254,21 +252,20 @@ async function main() {
         await processTargets(reportOptions, outputDir, lighthouseOptions);
 
         chrome.kill();
-
-        deleteLockFile(`${outputDir}/.lock`);
-
-    } catch(e) {
+    } catch (e) {
         logger.error(e);
+    } finally {
+        deleteLockFile(`${outputDir}/.lock`);
     }
 }
 
 module.exports = main;
-if(require.main == module) {
-    logger.info('Starting app');
+
+if (require.main === module) {
+    logger.info('Starting ..');
     main()
-    .then(() => {
-        logger.info('Done');
-        process.exit(0);
-    })
-    .catch(logger.warn);
+        .then(() => {
+            logger.info('Done');
+        })
+        .catch(logger.error);
 }

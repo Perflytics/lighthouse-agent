@@ -1,0 +1,18 @@
+{
+  "id" : "desktop",
+  "config": {
+    "options": [
+      "--disable-device-emulation",
+      "--disable-network-throttling",
+      "--disable-cpu-throttling"
+    ],
+    "chromeFlags": [
+      "--headless",
+      "--window-size=1366,768"
+    ]
+  },
+  "targets" : [ {
+    "url" : "https://www.smartmeter.io/",
+    "id" : "smio"
+  } ]
+}
