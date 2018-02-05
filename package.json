@@ -1,12 +1,12 @@
 {
   "name": "perflytics-engine",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A Docker server for the Lighthouse",
   "author": "Martin Kruták <devklingac@gmail.com>",
   "main": "app/server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node app/server.js -i ./test/input.json -o ./output"
+    "start": "node app/server.js -i ./data/input.json -o ./data"
   },
   "keywords": [],
   "license": "Apache-2.0",
