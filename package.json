@@ -6,7 +6,7 @@
   "main": "app/server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node app/server.js -i ./test/input-mobile.json -o ./output"
+    "start": "node app/server.js -i ./test/input.json -o ./output"
   },
   "keywords": [],
   "license": "Apache-2.0",
